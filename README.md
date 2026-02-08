@@ -1,4 +1,4 @@
-# OpenGrid UK | The Civic Operating System
+# OpenGrid UK
 
 > **"Rebooting the System: Turning ignored complaints into visible action."**
 
@@ -28,8 +28,7 @@ We are "rebooting" civic management by shifting the power dynamic. OpenGrid is a
 #### 📊 For the Council (The Admin Node)
 * **Admin Dashboard:** A "CommandOS" view for officials to update statuses and dispatch crews.
 * **Automated Costing:** The system automatically estimates repair costs (e.g., "£1,200 for Pothole") based on incident type.
-* **Confidence Scoring:** AI-driven confidence scores (0.0 - 1.0) help agencies prioritize real reports over spam.
-
+  
 ---
 
 ## 🛠️ Technology Stack
