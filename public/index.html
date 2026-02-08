@@ -60,11 +60,6 @@
         </div>
         
         <div class="flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-gray-500">
-            <div class="hidden md:flex items-center gap-2 border border-yellow-500/30 bg-yellow-900/10 px-3 py-1 rounded text-yellow-400">
-                <i data-lucide="award" class="w-3 h-3"></i>
-                <span id="user-rank">LVL 1</span> | <span id="user-xp">0</span> XP
-            </div>
-
             <a href="analytics.html" class="hidden md:flex items-center gap-2 text-gray-400 hover:text-white border border-transparent hover:border-white/30 px-3 py-1 rounded transition-colors decoration-0">
                 <i data-lucide="bar-chart-2" class="w-3 h-3"></i> Data
             </a>
@@ -194,7 +189,7 @@
     <div id="reportModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1200] hidden flex items-center justify-center p-4">
         <div class="bg-black border border-cyan-500/50 p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,255,255,0.15)]">
             <h2 class="text-xl font-bold mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
-                <i data-lucide="plus-circle" class="text-cyan-400"></i> LOG NEW BUG
+                <i data-lucide="alert-circle" class="text-cyan-400"></i> REPORT ISSUE
             </h2>
             <form id="bugForm" onsubmit="handleFormSubmit(event)">
                 <div class="mb-4">
@@ -205,26 +200,34 @@
                     <label class="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold">Description</label>
                     <textarea id="inputDesc" rows="2" placeholder="Details..." class="w-full bg-white/5 border border-white/10 p-3 text-white focus:border-cyan-500 focus:outline-none transition-colors font-mono text-sm"></textarea>
                 </div>
+                <div class="mb-4">
+                    <label class="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold">Upload Photo (Optional)</label>
+                    <input type="file" id="inputPhoto" accept="image/*" class="w-full bg-white/5 border border-white/10 p-2 text-gray-400 focus:border-cyan-500 focus:outline-none transition-colors text-xs">
+                </div>
                 <div class="mb-8">
-                    <label class="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold">Priority / Type</label>
-                    <div class="flex gap-4">
-                        <label class="flex-1 cursor-pointer group">
+                    <label class="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold">Priority Level</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="severity" value="low" class="peer hidden">
+                            <div class="p-2 border border-white/10 text-center text-[10px] uppercase font-bold text-gray-400 peer-checked:bg-blue-900/30 peer-checked:border-blue-500 peer-checked:text-blue-400 transition-all hover:bg-white/5">Low</div>
+                        </label>
+                        <label class="cursor-pointer group">
                             <input type="radio" name="severity" value="normal" class="peer hidden" checked>
-                            <div class="p-3 border border-white/10 text-center text-xs uppercase font-bold text-gray-400 peer-checked:bg-cyan-900/30 peer-checked:border-cyan-500 peer-checked:text-cyan-400 transition-all hover:bg-white/5">Standard</div>
+                            <div class="p-2 border border-white/10 text-center text-[10px] uppercase font-bold text-gray-400 peer-checked:bg-cyan-900/30 peer-checked:border-cyan-500 peer-checked:text-cyan-400 transition-all hover:bg-white/5">Normal</div>
                         </label>
-                        <label class="flex-1 cursor-pointer group">
+                        <label class="cursor-pointer group">
                             <input type="radio" name="severity" value="traffic" class="peer hidden">
-                            <div class="p-3 border border-white/10 text-center text-xs uppercase font-bold text-gray-400 peer-checked:bg-orange-900/30 peer-checked:border-orange-500 peer-checked:text-orange-400 transition-all hover:bg-white/5">Traffic</div>
+                            <div class="p-2 border border-white/10 text-center text-[10px] uppercase font-bold text-gray-400 peer-checked:bg-orange-900/30 peer-checked:border-orange-500 peer-checked:text-orange-400 transition-all hover:bg-white/5">Traffic</div>
                         </label>
-                        <label class="flex-1 cursor-pointer group">
+                        <label class="cursor-pointer group">
                             <input type="radio" name="severity" value="critical" class="peer hidden">
-                            <div class="p-3 border border-white/10 text-center text-xs uppercase font-bold text-gray-400 peer-checked:bg-pink-900/30 peer-checked:border-pink-500 peer-checked:text-pink-400 transition-all hover:bg-white/5">Critical</div>
+                            <div class="p-2 border border-white/10 text-center text-[10px] uppercase font-bold text-gray-400 peer-checked:bg-pink-900/30 peer-checked:border-pink-500 peer-checked:text-pink-400 transition-all hover:bg-white/5">Critical</div>
                         </label>
                     </div>
                 </div>
                 <div class="flex gap-4">
                     <button type="button" onclick="closeModal()" class="flex-1 py-3 border border-white/10 font-bold hover:bg-white/5 text-xs uppercase tracking-widest text-gray-400">Cancel</button>
-                    <button type="submit" class="flex-1 py-3 bg-cyan-500 text-black font-bold hover:bg-cyan-400 shadow-[0_0_20px_rgba(0,255,255,0.3)] text-xs uppercase tracking-widest">Initialize Node</button>
+                    <button type="submit" class="flex-1 py-3 bg-cyan-500 text-black font-bold hover:bg-cyan-400 shadow-[0_0_20px_rgba(0,255,255,0.3)] text-xs uppercase tracking-widest">Submit Report</button>
                 </div>
             </form>
         </div>
@@ -281,15 +284,14 @@
                     container.innerHTML = `<div class="text-center text-gray-600 text-[10px] italic py-4">No chatter on this frequency.</div>`;
                 } else {
                     container.innerHTML = comments.map(c => {
-                        const isMe = c.username === 'Guest'; // Simple check
                         const time = new Date(c.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                         return `
-                            <div class="flex flex-col mb-2 ${isMe ? 'items-end' : 'items-start'}">
+                            <div class="flex flex-col mb-2 items-start">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="text-[9px] font-bold ${isMe ? 'text-green-400' : 'text-cyan-400'}">${c.username || 'Anon'}</span>
+                                    <span class="text-[9px] font-bold text-cyan-400">anonymous</span>
                                     <span class="text-[8px] text-gray-600">${time}</span>
                                 </div>
-                                <div class="bg-zinc-800 border ${isMe ? 'border-green-900' : 'border-cyan-900'} rounded px-2 py-1 text-[11px] text-gray-300 max-w-[90%]">
+                                <div class="bg-zinc-800 border border-cyan-900 rounded px-2 py-1 text-[11px] text-gray-300 max-w-[90%]">
                                     ${c.text}
                                 </div>
                             </div>
@@ -308,14 +310,11 @@
             const text = input.value.trim();
             if (!text || !currentBugId) return;
 
-            const user = JSON.parse(localStorage.getItem('opengrid_user'));
-            const username = user ? user.username : 'Guest';
-
             try {
                 await fetch('http://localhost:3000/api/comments', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ bug_id: currentBugId, username: username, text: text })
+                    body: JSON.stringify({ bug_id: currentBugId, username: 'anonymous', text: text })
                 });
                 input.value = ''; // Clear input
                 loadComments(currentBugId); // Refresh
@@ -549,6 +548,27 @@
             document.getElementById('bug-desc').innerText = bug.desc || "No details.";
             document.getElementById('bug-location').innerHTML = bug.loc;
             
+            // Update bug badge based on type
+            const badge = document.getElementById('bug-badge');
+            const typeMap = { 'critical': 'Critical', 'traffic': 'Traffic Alert', 'news': 'News', 'resolved': 'Resolved' };
+            const badgeType = bug.type || 'normal';
+            const badgeText = typeMap[badgeType] || 'Standard';
+            badge.innerText = badgeText;
+            
+            // Update badge styling based on type
+            badge.className = 'inline-block px-3 py-1 rounded-sm text-[10px] font-bold uppercase tracking-widest border';
+            if (badgeType === 'critical') {
+                badge.className += ' bg-pink-900/30 border-pink-500 text-pink-400';
+            } else if (badgeType === 'traffic') {
+                badge.className += ' bg-orange-900/30 border-orange-500 text-orange-400';
+            } else if (badgeType === 'news') {
+                badge.className += ' bg-blue-900/30 border-blue-500 text-blue-400';
+            } else if (badgeType === 'resolved') {
+                badge.className += ' bg-green-900/30 border-green-500 text-green-400';
+            } else {
+                badge.className += ' bg-cyan-900/30 border-cyan-500 text-cyan-400';
+            }
+            
             if (bug.type === 'news' && bug.link) {
                 linkContainer.classList.remove('hidden');
                 linkBtn.href = bug.link;
@@ -566,6 +586,11 @@
                 btn.className = "absolute bottom-6 left-6 right-6 py-4 bg-zinc-800 border border-zinc-600 text-zinc-400 font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2 cursor-not-allowed";
                 btn.onclick = () => alert("Only authorized Council Staff can resolve incidents. Your vote has been logged.");
             }
+            
+            // Populate AI Audit Data
+            document.getElementById('ai-conf').innerText = bug.confidence ? (bug.confidence * 100).toFixed(0) + '%' : '85%';
+            document.getElementById('ai-cost').innerText = bug.estimated_cost || '£2,500';
+            document.getElementById('ai-dept').innerText = bug.authority || 'Leeds Council';
             
             // LOAD CHAT
             loadComments(bug.id);
@@ -586,21 +611,59 @@
         }
 
         async function applyFilters() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const type = document.getElementById('filterType').value;
-            const params = new URLSearchParams();
-            if (search) params.append('search', search);
-            if (type) params.append('type', type);
-
-            const response = await fetch(`${API_URL}?${params}`);
-            bugs = await response.json();
-            renderMap();
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('filterType').value;
             
-            if (search && bugs.length > 0) {
-                map.flyTo([bugs[0].lat, bugs[0].lng], 16, { animate: true, duration: 1.5 });
-                openSidebar(bugs[0]);
+            // Filter bugs based on search and type
+            let filtered = bugs.filter(bug => {
+                const matchesSearch = !searchInput || 
+                    bug.title.toLowerCase().includes(searchInput) || 
+                    bug.desc.toLowerCase().includes(searchInput) || 
+                    bug.loc.toLowerCase().includes(searchInput);
+                
+                const matchesType = !typeFilter || bug.type === typeFilter;
+                
+                return matchesSearch && matchesType;
+            });
+            
+            // Sort by votes (popularity) if search is active
+            if (searchInput || typeFilter) {
+                filtered.sort((a, b) => (b.votes || 0) - (a.votes || 0));
+            }
+            
+            // Update bug count
+            document.getElementById('bug-count').innerText = filtered.length;
+            
+            // Render filtered results
+            markerLayers.forEach(layer => map.removeLayer(layer));
+            markerLayers = [];
+            
+            filtered.forEach((bug) => {
+                const typeClass = bug.type;
+                const style = bug.type === 'resolved' ? 'opacity:0.5;' : '';
+                const iconHtml = `<div class="marker-pin ${typeClass}" style="${style}"></div>`;
+                const customIcon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [20, 20], iconAnchor: [10, 10] });
+                const marker = L.marker([bug.lat, bug.lng], { icon: customIcon }).addTo(map);
+                markerLayers.push(marker);
+                marker.on('click', () => openSidebar(bug));
+            });
+            
+            // Fly to first result if search is active
+            if ((searchInput || typeFilter) && filtered.length > 0) {
+                map.flyTo([filtered[0].lat, filtered[0].lng], 15, { animate: true, duration: 1.5 });
+                setTimeout(() => openSidebar(filtered[0]), 500);
             }
         }
+        
+        // Real-time search as user types
+        document.getElementById('searchInput').addEventListener('input', () => {
+            applyFilters();
+        });
+        
+        // Real-time filter by type change
+        document.getElementById('filterType').addEventListener('change', () => {
+            applyFilters();
+        });
 
         function toggleHeatmap() {
             isHeatMode = !isHeatMode;
@@ -627,7 +690,6 @@
         
         let tempLocation = null;
         function enableReportMode() {
-            alert("SYSTEM ARMED: Click map to deploy node.");
             document.getElementById('map').style.cursor = 'crosshair';
             map.once('click', function(e) { tempLocation = e.latlng; openModal(); document.getElementById('map').style.cursor = 'grab'; });
         }
@@ -637,13 +699,25 @@
             const title = document.getElementById('inputTitle').value;
             const desc = document.getElementById('inputDesc').value;
             const type = document.querySelector('input[name="severity"]:checked').value;
+            const photoInput = document.getElementById('inputPhoto');
+            
+            let image = null;
+            if (photoInput.files && photoInput.files[0]) {
+                const file = photoInput.files[0];
+                const reader = new FileReader();
+                image = await new Promise((resolve) => {
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+            }
             
             const newBug = {
                 lat: tempLocation.lat,
                 lng: tempLocation.lng,
                 title, desc, type,
                 loc: `Lat: ${tempLocation.lat.toFixed(4)}`,
-                time: Date.now()
+                time: Date.now(),
+                image: image
             };
             
             await fetch(API_URL, {
@@ -662,15 +736,27 @@
             window.location.href = 'login.html';
         }
 
+        // Initialize app
         fetchBugs();
         fetchWeather();
-        setInterval(fetchWeather, 600000); 
-        updateXP(0);
-        function updateXP(amount) {
-            userXP += amount;
-            document.getElementById('user-xp').innerText = userXP;
-            document.getElementById('user-rank').innerText = `LVL ${Math.floor(userXP/100)+1}`;
-        }
+        setInterval(fetchWeather, 600000);
+        
+        // Setup search and filter event listeners after DOM is ready
+        setTimeout(() => {
+            const searchInput = document.getElementById('searchInput');
+            const filterType = document.getElementById('filterType');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', applyFilters);
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') applyFilters();
+                });
+            }
+            
+            if (filterType) {
+                filterType.addEventListener('change', applyFilters);
+            }
+        }, 100);
     </script>
 </body>
 </html>

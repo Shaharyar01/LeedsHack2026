@@ -29,7 +29,10 @@ db.serialize(() => {
         votes INTEGER DEFAULT 0,
         time INTEGER,
         assigned_to INTEGER,
-        priority INTEGER DEFAULT 1
+        priority INTEGER DEFAULT 1,
+        confidence REAL DEFAULT 0.8,
+        estimated_cost TEXT,
+        authority TEXT
     )`);
 
     // 2. Comments Table (NEW - For the Chat Feature)
@@ -39,6 +42,15 @@ db.serialize(() => {
         username TEXT,
         text TEXT,
         time INTEGER
+    )`);
+
+    // 3. Users Table (for simple auth)
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        email TEXT,
+        password TEXT,
+        created_at INTEGER
     )`);
 });
 
@@ -73,9 +85,9 @@ app.get('/api/bugs/:id', (req, res) => {
 
 // Report New Bug (or Traffic Sync)
 app.post('/api/bugs', (req, res) => {
-    const { lat, lng, title, desc, loc, type, image, time } = req.body;
-    db.run(`INSERT INTO bugs (lat, lng, title, desc, loc, type, image, time) VALUES (?,?,?,?,?,?,?,?)`,
-        [lat, lng, title, desc, loc, type, image, time || Date.now()],
+    const { lat, lng, title, desc, loc, type, image, time, confidence, estimated_cost, authority } = req.body;
+    db.run(`INSERT INTO bugs (lat, lng, title, desc, loc, type, image, time, confidence, estimated_cost, authority) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+        [lat, lng, title, desc, loc, type, image, time || Date.now(), confidence, estimated_cost, authority],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
@@ -121,6 +133,39 @@ app.post('/api/comments', (req, res) => {
             res.json({ id: this.lastID });
         }
     );
+});
+
+// --- AUTH ROUTES ---
+
+// Register
+app.post('/api/auth/register', (req, res) => {
+    const { username, email, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+    db.get('SELECT id FROM users WHERE username = ?', [username], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (row) return res.status(400).json({ error: 'Username already exists' });
+
+        db.run('INSERT INTO users (username, email, password, created_at) VALUES (?, ?, ?, ?)',
+            [username, email || '', password, Date.now()], function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                const user = { id: this.lastID, username, email: email || '' };
+                res.json(user);
+            }
+        );
+    });
+});
+
+// Login
+app.post('/api/auth/login', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+    db.get('SELECT id, username, email FROM users WHERE username = ? AND password = ?', [username, password], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!row) return res.status(401).json({ error: 'Invalid credentials' });
+        res.json(row);
+    });
 });
 
 // Start Server
