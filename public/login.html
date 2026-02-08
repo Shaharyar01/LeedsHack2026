@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenGrid UK | Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { margin: 0; background: #050505; color: white; font-family: 'Courier New', Courier, monospace; }
+        .glow { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
+        .error { color: #ff6b6b; font-size: 12px; margin-top: 8px; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-md p-8">
+        <div class="text-center mb-12">
+            <div class="flex justify-center mb-4">
+                <div class="p-3 bg-cyan-900/20 border border-cyan-500/50 rounded-lg">
+                    <i data-lucide="shield" class="text-cyan-400 w-8 h-8"></i>
+                </div>
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight mb-2">CITY-OS <span class="text-cyan-400">LOGIN</span></h1>
+            <p class="text-gray-400 text-xs uppercase tracking-widest">Infrastructure Report System</p>
+        </div>
+
+        <div id="loginTab" class="space-y-6">
+            <div class="bg-white/5 border border-white/10 p-6 rounded-xl">
+                <h2 class="font-bold uppercase tracking-widest text-sm mb-6 flex items-center gap-2">
+                    <i data-lucide="log-in" class="w-4 h-4"></i> Sign In
+                </h2>
+
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="text-xs uppercase tracking-widest text-gray-400 block mb-2">Username</label>
+                        <input type="text" id="loginUsername" placeholder="your_username" 
+                            class="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-500/50 transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="text-xs uppercase tracking-widest text-gray-400 block mb-2">Password</label>
+                        <input type="password" id="loginPassword" placeholder="••••••••" 
+                            class="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-500/50 transition-colors">
+                    </div>
+
+                    <div id="loginError" class="error hidden"></div>
+
+                    <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-2 rounded uppercase tracking-widest text-sm transition-colors glow">
+                        Login
+                    </button>
+                </form>
+
+                <div class="mt-4 text-center text-xs text-gray-400">
+                    Don't have an account? <button type="button" onclick="switchTab('registerTab')" class="text-cyan-400 hover:text-cyan-300 font-bold">Register</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="registerTab" class="space-y-6 hidden">
+            <div class="bg-white/5 border border-white/10 p-6 rounded-xl">
+                <h2 class="font-bold uppercase tracking-widest text-sm mb-6 flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i> Create Account
+                </h2>
+
+                <form id="registerForm" class="space-y-4">
+                    <div>
+                        <label class="text-xs uppercase tracking-widest text-gray-400 block mb-2">Username</label>
+                        <input type="text" id="regUsername" placeholder="your_username" 
+                            class="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-500/50 transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="text-xs uppercase tracking-widest text-gray-400 block mb-2">Email</label>
+                        <input type="email" id="regEmail" placeholder="your@email.com" 
+                            class="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-500/50 transition-colors">
+                    </div>
+
+                    <div>
+                        <label class="text-xs uppercase tracking-widest text-gray-400 block mb-2">Password</label>
+                        <input type="password" id="regPassword" placeholder="••••••••" 
+                            class="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-500/50 transition-colors">
+                    </div>
+
+                    <div id="registerError" class="error hidden"></div>
+
+                    <button type="submit" class="w-full bg-green-500 hover:bg-green-400 text-black font-bold py-2 rounded uppercase tracking-widest text-sm transition-colors glow">
+                        Register
+                    </button>
+                </form>
+
+                <div class="mt-4 text-center text-xs text-gray-400">
+                    Already have an account? <button type="button" onclick="switchTab('loginTab')" class="text-cyan-400 hover:text-cyan-300 font-bold">Login</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 p-4 bg-black/50 border border-cyan-500/20 rounded text-xs text-gray-400 text-center">
+            <p class="font-mono">Demo Credentials:</p>
+            <p class="mt-2 text-cyan-400">Username: <span class="font-bold">demo</span></p>
+            <p class="text-cyan-400">Password: <span class="font-bold">demo123</span></p>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function switchTab(tabName) {
+            document.getElementById('loginTab').classList.toggle('hidden', tabName !== 'loginTab');
+            document.getElementById('registerTab').classList.toggle('hidden', tabName !== 'registerTab');
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+
+                localStorage.setItem('opengrid_user', JSON.stringify(data));
+                window.location.href = 'index.html';
+            } catch (err) {
+                errorDiv.classList.remove('hidden');
+                errorDiv.innerText = '❌ ' + err.message;
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const errorDiv = document.getElementById('registerError');
+
+            if (!username || !email || !password) {
+                errorDiv.classList.remove('hidden');
+                errorDiv.innerText = '❌ All fields required';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+
+                localStorage.setItem('opengrid_user', JSON.stringify(data));
+                window.location.href = 'index.html';
+            } catch (err) {
+                errorDiv.classList.remove('hidden');
+                errorDiv.innerText = '❌ ' + err.message;
+            }
+        });
+    </script>
+</body>
+</html>

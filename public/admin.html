@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COUNCIL DISPATCH // ADMIN NODE</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* ADMIN THEME: AMBER/ORANGE */
+        body { margin: 0; background: #0f0f0f; color: #f59e0b; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        
+        .leaflet-layer, .leaflet-control-zoom-in, .leaflet-control-zoom-out, .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+        
+        /* PINS */
+        .marker-pin { width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; animation: pulse 2s infinite; }
+        .marker-pin.critical { background: #FF00FF; box-shadow: 0 0 15px #FF00FF; }
+        .marker-pin.traffic { background: #ef4444; box-shadow: 0 0 15px #ef4444; }
+        .marker-pin.normal { background: #00FFFF; box-shadow: 0 0 15px #00FFFF; }
+        .marker-pin.resolved { background: #22c55e; border-color: #bbf7d0; animation: none; opacity: 0.5; }
+
+        @keyframes pulse { 0% { transform: scale(0.9); } 70% { transform: scale(1); } 100% { transform: scale(0.9); } }
+        
+        /* Sidebar Transition */
+        #sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body>
+
+    <nav class="fixed top-0 w-full z-[1000] bg-zinc-900/90 border-b border-orange-500/30 h-16 flex justify-between items-center px-6">
+        <div class="text-xl font-bold uppercase flex items-center gap-3">
+            <i data-lucide="shield-alert" class="text-orange-500"></i>
+            <span class="tracking-tighter text-white">CITY<span class="text-orange-500">OPS</span> // DISPATCH</span>
+        </div>
+        
+        <div class="flex items-center gap-6 text-xs font-bold uppercase tracking-widest">
+            <div class="flex items-center gap-2 text-red-500 animate-pulse">
+                <i data-lucide="radio" class="w-4 h-4"></i> LIVE FEED ACTIVE
+            </div>
+            <div>
+                PENDING TICKETS: <span id="pending-count" class="text-white text-lg">0</span>
+            </div>
+            <a href="index.html" class="border border-zinc-600 px-3 py-1 text-zinc-400 hover:text-white hover:border-white transition-colors">
+                <i data-lucide="log-out" class="w-3 h-3 inline"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="fixed top-16 left-0 bottom-0 w-80 bg-zinc-900 border-r border-zinc-800 overflow-y-auto z-[900]">
+        <div class="p-4 border-b border-zinc-800 font-bold text-sm text-zinc-400">PRIORITY QUEUE</div>
+        <div id="incident-list" class="flex flex-col">
+            </div>
+    </div>
+
+    <div id="map" class="absolute top-16 left-80 right-0 bottom-0 z-0"></div>
+
+    <div id="sidebar" class="fixed top-16 right-0 h-full w-96 bg-zinc-900/95 border-l border-orange-500 p-8 transform translate-x-full z-[1100] shadow-2xl">
+        <button onclick="closeSidebar()" class="text-zinc-500 hover:text-white mb-6 flex items-center gap-2 text-xs uppercase font-bold">
+            <i data-lucide="x"></i> Close Panel
+        </button>
+
+        <div id="ticket-details">
+            <span id="bug-id" class="text-xs text-zinc-500 font-mono">ID: #000</span>
+            <h2 id="bug-title" class="text-2xl font-bold text-white mb-2">Select Incident</h2>
+            <div id="bug-desc" class="text-zinc-400 text-sm mb-6 border-l-2 border-orange-500 pl-3"></div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-black p-3 rounded border border-zinc-800">
+                    <div class="text-[10px] text-zinc-500">SEVERITY</div>
+                    <div id="bug-severity" class="text-orange-500 font-bold uppercase">...</div>
+                </div>
+                <div class="bg-black p-3 rounded border border-zinc-800">
+                    <div class="text-[10px] text-zinc-500">CITIZEN VOTES</div>
+                    <div id="bug-votes" class="text-white font-bold">0</div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="dispatchCrew()" class="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="truck"></i> DISPATCH REPAIR CREW
+                </button>
+                <button onclick="markSafe()" class="w-full py-3 border border-zinc-700 hover:border-white text-zinc-400 hover:text-white font-bold uppercase text-xs">
+                    <i data-lucide="check"></i> Mark as False Alarm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const map = L.map('map', { zoomControl: false }).setView([53.8008, -1.5491], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: 'OpenGrid Admin', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+
+        const API_URL = "http://localhost:3000/api/bugs";
+        let bugs = [];
+        let markerLayers = [];
+        let currentBugId = null;
+
+        async function fetchBugs() {
+            const res = await fetch(API_URL);
+            bugs = await res.json();
+            
+            // Filter: Admins care about UNRESOLVED issues mostly
+            const pending = bugs.filter(b => b.type !== 'resolved');
+            document.getElementById('pending-count').innerText = pending.length;
+            
+            renderMap();
+            renderList(pending);
+        }
+
+        function renderMap() {
+            markerLayers.forEach(layer => map.removeLayer(layer));
+            markerLayers = [];
+
+            bugs.forEach((bug) => {
+                let colorClass = bug.type === 'resolved' ? 'resolved' : (bug.type === 'critical' ? 'critical' : 'normal');
+                if(bug.type === 'traffic') colorClass = 'traffic';
+
+                const iconHtml = `<div class="marker-pin ${colorClass}"></div>`;
+                const customIcon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [20, 20], iconAnchor: [10, 10] });
+                
+                const marker = L.marker([bug.lat, bug.lng], { icon: customIcon }).addTo(map);
+                marker.on('click', () => openSidebar(bug));
+                markerLayers.push(marker);
+            });
+        }
+
+        function renderList(list) {
+            const container = document.getElementById('incident-list');
+            container.innerHTML = list.map(bug => `
+                <div onclick="flyToBug(${bug.id})" class="p-4 border-b border-zinc-800 hover:bg-zinc-800 cursor-pointer transition-colors group">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded ${bug.type==='critical' ? 'bg-red-900 text-red-300' : 'bg-zinc-700 text-zinc-300'} uppercase">${bug.type}</span>
+                        <span class="text-[10px] text-zinc-500">${new Date(bug.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div class="font-bold text-sm text-zinc-200 group-hover:text-orange-400">${bug.title}</div>
+                    <div class="text-xs text-zinc-500 truncate">${bug.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        function flyToBug(id) {
+            const bug = bugs.find(b => b.id === id);
+            if(bug) {
+                map.flyTo([bug.lat, bug.lng], 16, { duration: 1.5 });
+                openSidebar(bug);
+            }
+        }
+
+        function openSidebar(bug) {
+            currentBugId = bug.id;
+            document.getElementById('sidebar').classList.remove('translate-x-full');
+            document.getElementById('bug-id').innerText = `INCIDENT ID: #${bug.id}`;
+            document.getElementById('bug-title').innerText = bug.title;
+            document.getElementById('bug-desc').innerText = bug.desc;
+            document.getElementById('bug-severity').innerText = bug.type.toUpperCase();
+            document.getElementById('bug-votes').innerText = bug.votes;
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.add('translate-x-full');
+        }
+
+        // --- THE "FIX" LOGIC (Exclusive to Admin) ---
+        async function dispatchCrew() {
+            if(!currentBugId) return;
+            
+            // Visual Feedback
+            const btn = document.querySelector('button[onclick="dispatchCrew()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "DISPATCHING...";
+            
+            await fetch(`${API_URL}/${currentBugId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'resolved' })
+            });
+
+            alert(`UNIT DISPATCHED TO SECTOR ${currentBugId}. INCIDENT RESOLVED.`);
+            btn.innerHTML = originalText;
+            closeSidebar();
+            fetchBugs();
+        }
+
+        async function markSafe() {
+            if(!confirm("Mark this report as False Alarm/Safe?")) return;
+            // You might want to delete it or mark as resolved
+            dispatchCrew(); 
+        }
+
+        // Auto Refresh
+        fetchBugs();
+        setInterval(fetchBugs, 5000); // Polling every 5s for real-time feel
+    </script>
+</body>
+</html>
